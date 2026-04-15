@@ -499,7 +499,7 @@
                             style="border-left: 5px solid #808080;">方法評估指標於受訪者職務需求之相對重要性比較</span>
                     </div>
                     <p class="fs-6 fw-bold mb-1">
-                        本研究整理了多種對比度與耀斑量測方法的評估指標，包括：方法適切性、運算耗時、現行人工量化差異與抗噪能力。
+                        本研究整理了多種對比度與耀斑量測方法的評估指標，包括：方法適切性、運算耗時、現行基準方法之差異與抗噪能力。
                     </p>
                     <p class="fs-6 fw-bold mb-1">
                         ※ 各指標項目說明：
@@ -510,8 +510,8 @@
                             根據您的產業專業及方法的質化描述（包括計算原理與適用場景），<span class="text-danger">評估該方法是否適合導入您的工作流程。</span>
                         </li>
                         <li>
-                            <strong class="text-primary">現行人工量化差異</strong><br>
-                            基於現行對比度計算方法（Michelson）及耀斑計算方法（灰階像素），比較兩者經正規化之數據曲線的形狀差異，包括以下三種指標：
+                            <strong class="text-primary">現行基準方法之差異</strong><br>
+                            基於現行對比度計算方法（米歇爾森對比度法）及耀斑計算方法（灰階像素），比較兩者經正規化之數據曲線的形狀差異，包括以下三種指標：
                             <ul class="subitem">
                                 <li>
                                     <strong class="text-success">皮爾森相關係數（Pearson）</strong>：
@@ -641,7 +641,7 @@
                                     <th rowspan="2" class="align-middle">序號</th>
                                     <th rowspan="2" class="align-middle">方法名稱</th>
                                     <th colspan="2" class="align-middle">方法適切性</th>
-                                    <th colspan="3" class="align-middle">現行人工量化差異</th>
+                                    <th colspan="3" class="align-middle">現行基準方法之差異</th>
                                     <th rowspan="2" class="align-middle">運算耗時</th>
                                     <th rowspan="2" class="align-middle">抗躁能力(RNI)</th>
                                 </tr>
@@ -812,7 +812,7 @@
                                     <th rowspan="2" class="align-middle">序號</th>
                                     <th rowspan="2" class="align-middle">方法名稱</th>
                                     <th colspan="2" class="align-middle">方法適切性</th>
-                                    <th colspan="3" class="align-middle">現行人工量化差異</th>
+                                    <th colspan="3" class="align-middle">現行基準方法之差異</th>
                                     <th rowspan="2" class="align-middle">運算耗時</th>
                                 </tr>
                                 <tr style="height:90px;">
@@ -971,7 +971,7 @@
         {
             index: 1, items: [
                 { name: "方法適切性", subtitle: "", code: "M1" },
-                { name: "現行人工量化差異", subtitle: "", code: "M2" },
+                { name: "現行基準方法之差異", subtitle: "", code: "M2" },
                 { name: "運算耗時", subtitle: "", code: "M3" },
                 { name: "抗噪能力", subtitle: "", code: "M4" }
             ], containerId: "keyItems"
@@ -1203,7 +1203,7 @@
     $(document).ready(function () {
         // 單列排序
         // 1. 定義不同的數據
-        const dataM = ["方法適切性", "現行人工量化差異", "運算耗時", "抗噪能力"];
+        const dataM = ["方法適切性", "現行基準方法之差異", "運算耗時", "抗噪能力"];
         const dataC = ["高頻能量指標", "變異數指標", "邊緣能量指標", "差分銳利度指標", "梯度銳利度指標"];
         const dataF = ["強度百分比法", "自適應二值化", "大津二值化"];
 
@@ -1764,9 +1764,9 @@
                 };
                 sendData.FirstSorted = sortedResult;
 
-                // 因出兩種方法結果
+                // 印出兩種方法結果
                 console.log(JSON.stringify(sendData, null, 2));
-                alert('問卷已成功匯出 JSON，請打開 console 查看內容');
+                alert('問卷已成功送出！');
 
 
                 $.ajax({
