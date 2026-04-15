@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投像品質評估於投影機光學鏡頭檢測流程自動化實現專家問卷</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .survey-card {
+            max-width: 1600px;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            margin: auto;
+        }
+
+        #saveDraftBtn {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background-color: #0dcaf0;
+            /* 綠色 */
+            color: white;
+            border: none;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 9999;
+            /* 確保在最上層 */
+            transition: all 0.3s ease;
+        }
+
+        #saveDraftBtn:hover {
+            transform: translateY(-5px) scale(1.05);
+            background-color: #0dcaf0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            opacity: 1;
+        }
+
+        .fab-label {
+            position: absolute;
+            right: 80px;
+            background: #333;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .fab-label:hover {
+            opacity: 1;
+        }
+    </style>
+    <style>
+        .drag-area {
+            border: 2px dashed #007bff;
+            border-radius: 6px;
+            padding: 15px;
+            background: #f8f9fa;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .sortable-item {
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0.5rem 1rem;
+        }
+
+        .dragging {
+            background-color: #ffeeba;
+            border-color: #ffc107;
+        }
+
+        .ui-state-highlight {
+            height: 3rem;
+            background: #cce5ff;
+            border: 1px dashed #004085;
+            margin-bottom: 5px;
+        }
+
+        #dragHand {
+            width: 24px;
+            position: absolute;
+            display: none;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        #dragHintText {
+            position: absolute;
+            display: none;
+            background: #0d6efd;
+            color: white;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .drag-instruction {
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .invalid-feedback {
+            display: block;
+            color: red;
+            font-size: 0.85rem;
+        }
+
+        .rank-badge {
+            font-weight: bold;
+            color: #0d6efd;
+            font-size: 1.2rem;
+            width: 30px;
+            text-align: center;
+            margin-right: 10px;
+        }
+    </style>
+    <style>
+        ul,
+        ol {
+            margin-bottom: 1em;
+        }
+
+        li {
+            margin-bottom: 0.5em;
+        }
+
+        .subitem {
+            margin-left: 0em;
+        }
+    </style>
+    <style>
+        /* 表頭水平 & 垂直置中 */
+        thead th {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        /* 質化描述文字靠左 */
+        .left-text {
+            text-align: left;
+            white-space: normal;
+        }
+
+        /* 數值欄置中 */
+        .numeric {
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* 方法名稱欄寬大，不換行 */
+        .method-name {
+            white-space: nowrap;
+        }
+
+        /* 序號置中 */
+        .serial {
+            text-align: center;
+            white-space: nowrap;
+        }
+    </style>
+    <style>
+        .compare-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .compare-item {
+            flex: 1;
+            display: flex;
+            /* 先啟用 flex */
+            flex-direction: column;
+            /* 內容垂直排列 */
+            justify-content: center;
+            /* 整個 div 垂直置中內容 */
+            align-items: center;
+            /* 水平置中內容 */
+            text-align: center;
+
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            color: #fff;
+            height: 60px;
+            line-height: 1.2;
+            /* 可以保留 */
+        }
+
+        .left-label {
+            background-color: #0d6efd;
+        }
+
+        .right-label {
+            background-color: #dc3545;
+        }
+
+        .center-label {
+            background-color: #6c757d;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+        }
+
+        .compare-item .subtitle {
+            font-weight: normal;
+            font-size: 0.8rem;
+            /* 讓副標小一點 */
+            margin-top: 0.25rem;
+            /* 與主文字保持間距 */
+        }
+
+        .inconsistent {
+            border: 2px solid #dc3545;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+        }
+
+        .scale-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .scale-container .btn {
+            min-width: 80px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body class="p-4">
+    <div class="container survey-card">
+        <div class="text-center mb-5">
+            <h3 class="fw-bold">投像品質評估於投影機光學鏡頭檢測流程自動化實現之專家意見調查</h3>
+            <!--
+            <p class="text-muted fs-6 mb-1">
+                本問卷內容較長，預計填寫時間為 10 分鐘。您的進度可點擊
+                <span class="fw-bold">右下角按鈕
+                    <i class="bi bi-floppy-fill text-primary"></i>
+                </span> 隨時儲存。
+            </p>
+            <p class="text-muted fs-6 mb-0">
+                請放心，問卷完成送出後，所有暫存資料將自動清除，不會佔用您的儲存空間，也不會被他人存取。
+            </p>
+            -->
+        </div>
+        <!-- 問卷說明 -->
+        <div class="card mb-4">
+            <div class="card-header fs-4 fw-bolder">一、問卷說明</div>
+            <div class="card-body">
+                <div class="mb-1 p-3 bg-light border rounded-3">
+                    <p class="mb-2" style="text-align:justify;">
+                        本研究旨在為我國
+                        <span class="fw-bold text-primary">投影機產業</span>
+                        建立一套
+                        <span class="fw-bold text-danger">數據標準化與自動檢測系統</span>
+                        。透過此系統，可有效降低現行仰賴人力的
+                        <span class="fw-bold text-danger">量測與紀錄成本</span>
+                        ，提升
+                        <span class="fw-bold text-danger">檢測精度與一致性</span>
+                        ，同時
+                        <span class="fw-bold text-danger">加速出貨流程</span>
+                        ，實現
+                        <span class="fw-bold text-danger">即時紀錄與品管追溯功能</span>
+                        。
+                    </p>
+                    <p class="mb-2" style="text-align:justify;">
+                        本項目將針對現行投影影像的
+                        <span class="fw-bold text-primary">對比度</span>
+                        與
+                        <span class="fw-bold text-primary">耀斑量測方法</span>
+                        ，提供
+                        <span class="fw-bold text-danger">數位化、高效率的改良方案</span>
+                        。
+                        經學術文獻整理，本研究開發基於實務場景選取了多種適切方法作為基礎，其中
+                        <span class="fw-bold">對比度量測方法5種</span>
+                        、
+                        <span class="fw-bold">耀斑量測方法3種</span>
+                        。
+                    </p>
+                    <p class="mb-2" style="text-align:justify;">
+                        我們誠摯邀請具
+                        <span class="fw-bold">相關產業背景及實務經驗的專家</span>
+                        協助填寫問卷，針對所選方法在自身職務中對各
+                        <span class="fw-bold text-primary">評比項目的重要性</span>
+                        提供意見，共同優化 <span class="fw-bold text-primary">投影機影像檢測流程</span>。
+                    </p>
+                    <p class="mt-2 mb-0" style="text-align:justify;">
+                        <span class="fw-bold text-danger">※ 詳細資訊與填答說明文件請<a href="https://drive.google.com/file/d/172BGjlmyEQBI05Ufm3O45lWx2Z4Kyu9-/view?usp=sharing" target="_blank" download>下載</a>參考，以協助正確填寫問卷。</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <!-- 基本資料 -->
+        <div class="card mb-4">
+            <div class="card-header fs-4 fw-bolder">二、基本資料</div>
+            <div class="card-body">
+                <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                    <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">身分識別資料</span>
+                    <span style="color:gray; font-size:0.9em;">僅作為資料彙整與比對使用，所有資料將依相關規範妥善管理。</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="fw-bolder">任職公司</label><input type="text" class="form-control"
+                            id="ecompany">
+                        <div class="invalid-feedback text-end" id="ecompanyFeedback"></div>
+                    </div>
+                    <div class="col-md-2"><label class="fw-bolder">員工編號</label><input type="text" class="form-control"
+                            id="eid">
+                        <div class="invalid-feedback text-end" id="eidFeedback"></div>
+                    </div>
+                    <div class="col-md-4"><label class="fw-bolder">姓名</label><input type="text" class="form-control"
+                            id="name">
+                        <div class="invalid-feedback text-end" id="nameFeedback"></div>
+                    </div>
+                </div>
+                <div class="mb-3 mt-5" style="display:flex; align-items:flex-end; gap:10px;">
+                    <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">個人背景資料</span>
+                    <span style="color:gray; font-size:0.9em;">用於了解受填者之基本背景分布，僅進行整體分析，不作個別評估。</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="fw-bolder">性別</label>
+                        <select class="form-select" id="gender">
+                            <option value="">請選擇...</option>
+                            <option>男</option>
+                            <option>女</option>
+                            <option>其他</option>
+                            <option>不願透露</option>
+                        </select>
+                        <div class="invalid-feedback text-end" id="genderFeedback"></div>
+                    </div>
+                    <div class="col-md-4"><label class="fw-bolder">年齡</label>
+                        <input type="number" class="form-control" id="age">
+                        <div class="invalid-feedback text-end" id="ageFeedback"></div>
+                    </div>
+                    <div class="col-md-4"><label class="fw-bolder">學歷</label>
+                        <select class="form-select" id="education">
+                            <option value="">請選擇...</option>
+                            <option>博士</option>
+                            <option>碩士</option>
+                            <option>學士</option>
+                            <option>專科</option>
+                            <option>高中職</option>
+                        </select>
+                        <div class="invalid-feedback text-end" id="educationFeedback"></div>
+                    </div>
+                </div>
+                <div class="mb-3 mt-5" style="display:flex; align-items:flex-end; gap:10px;">
+                    <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">組織職務資訊</span>
+                    <span style="color:gray; font-size:0.9em;">用於分析不同組織單位與職務類型之差異，請依目前實際狀況填寫。</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-3"><label class="fw-bolder">部門名稱</label><input type="text" class="form-control"
+                            id="deptName">
+                        <div class="invalid-feedback text-end" id="deptNameFeedback"></div>
+                    </div>
+                    <div class="col-md-3"><label class="fw-bolder">部門類別</label>
+                        <select class="form-select" id="deptCategory">
+                            <option value="">請選擇...</option>
+                            <option>研發</option>
+                            <option>製造</option>
+                            <option>品質</option>
+                            <option>管理</option>
+                        </select>
+                        <div class="invalid-feedback text-end" id="deptCategoryFeedback"></div>
+                    </div>
+                    <div class="col-md-3"><label class="fw-bolder">職務職稱</label><input type="text" class="form-control"
+                            id="title">
+                        <div class="invalid-feedback text-end" id="titleFeedback"></div>
+                    </div>
+                    <div class="col-md-3"><label class="fw-bolder">主要職務</label>
+                        <select class="form-select" id="positionContent">
+                            <option value="">請選擇...</option>
+                            <option>新創產品開發</option>
+                            <option>光學設計研發</option>
+                            <option>機構設計研發</option>
+                            <option>產線製程優化</option>
+                            <option>製造製程管理</option>
+                            <option>生產計劃管理</option>
+                            <option>品質檢驗管制</option>
+                            <option>品質系統保證</option>
+                            <option>現場製程作業</option>
+                            <option>入料品質管制</option>
+                            <option>測試量測工程</option>
+                        </select>
+                        <div class="invalid-feedback text-end" id="positionContentFeedback"></div>
+                    </div>
+                </div>
+                <div class="mb-3 mt-5" style="display:flex; align-items:flex-end; gap:10px;">
+                    <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">專業經驗年資</span>
+                    <span style="color:gray; font-size:0.9em;">用於評估專業經驗累積情形，請以實際年資填寫。</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="fw-bolder">年資 (本業相關)</label><input type="number"
+                            class="form-control" id="expMain">
+                        <div class="invalid-feedback text-end" id="expMainFeedback"></div>
+                    </div>
+                    <div class="col-md-4"><label class="fw-bolder">年資 (本職務)</label><input type="number"
+                            class="form-control" id="expPosition">
+                        <div class="invalid-feedback text-end" id="expPositionFeedback"></div>
+                    </div>
+                    <div class="col-md-4"><label class="fw-bolder">總工作年資</label><input type="number"
+                            class="form-control" id="expTotal">
+                        <div class="invalid-feedback text-end" id="expTotalFeedback"></div>
+                    </div>
+                </div>
+                <div class="mb-3 mt-5" style="display:flex; align-items:flex-end; gap:10px;">
+                    <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">聯繫方式資料</span>
+                    <span style="color:gray; font-size:0.9em;">僅於必要之業務聯繫或後續研究聯絡時使用，非經同意不另作他用。</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="fw-bolder">公司分機</label><input type="text" class="form-control"
+                            id="ext">
+                        <div class="invalid-feedback text-end" id="extFeedback"></div>
+                    </div>
+                    <div class="col-md-4"><label class="fw-bolder">聯繫電子信箱</label><input type="email"
+                            class="form-control" id="email">
+                        <div class="invalid-feedback text-end" id="emailFeedback"></div>
+                    </div>
+                    <div class="col-md-4"><label class="fw-bolder">手機號碼</label><input type="text" class="form-control"
+                            id="phone">
+                        <div class="invalid-feedback text-end" id="phoneFeedback"></div>
+                    </div>
+                </div>
+                <div class="mb-3 mt-5" style="display:flex; align-items:flex-end; gap:10px;">
+                    <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">後續訪談意願</span>
+                    <span style="color:gray; font-size:0.9em;">僅作為研究或改善之延伸參考，是否同意不影響任何權益。</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-3"><label class="fw-bolder">是否願意接受後續訪談</label>
+                        <select class="form-select" id="followUp">
+                            <option value="">請選擇...</option>
+                            <option>是</option>
+                            <option>否</option>
+                        </select>
+                        <div class="invalid-feedback text-end" id="followUpFeedback"></div>
+                    </div>
+                    <div class="col-md-9"><label class="fw-bolder">方便受訪時間</label>
+                        <select class="form-select" id="availableTime">
+                            <option value="">請選擇...</option>
+                            <option value="call">拜訪前來電確認即可</option>
+                            <option value="morning">早上時段均可</option>
+                            <option value="afternoon">下午時段均可</option>
+                            <option value="evening">晚上時段均可</option>
+                            <option value="8">08:00</option>
+                            <option value="9">09:00</option>
+                            <option value="10">10:00</option>
+                            <option value="11">11:00</option>
+                            <option value="12">12:00</option>
+                            <option value="13">13:00</option>
+                            <option value="14">14:00</option>
+                            <option value="15">15:00</option>
+                            <option value="16">16:00</option>
+                            <option value="17">17:00</option>
+                            <option value="18">18:00</option>
+                            <option value="19">19:00</option>
+                            <option value="20">20:00</option>
+                            <option value="21">21:00</option>
+                            <option value="22">22:00</option>
+                            <option value="23">23:00</option>
+                        </select>
+                        <div class="invalid-feedback text-end" id="availableTimeFeedback"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 評選參考項目在職務上 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="card-header fs-4 fw-bolder">三、專家意見調查[1/4]</div>
+                <div class="card-body">
+                    <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                        <span class="ps-2 fs-5 fw-bolder"
+                            style="border-left: 5px solid #808080;">方法評估指標於受訪者職務需求之相對重要性比較</span>
+                    </div>
+                    <p class="fs-6 fw-bold mb-1">
+                        本研究整理了多種對比度與耀斑量測方法的評估指標，包括：方法適切性、運算耗時、現行人工量化差異與抗噪能力。
+                    </p>
+                    <p class="fs-6 fw-bold mb-1">
+                        ※ 各指標項目說明：
+                    </p>
+                    <ol>
+                        <li>
+                            <strong class="text-primary fw-bolder">方法適切性</strong><br>
+                            根據您的產業專業及方法的質化描述（包括計算原理與適用場景），<span class="text-danger">評估該方法是否適合導入您的工作流程。</span>
+                        </li>
+                        <li>
+                            <strong class="text-primary">現行人工量化差異</strong><br>
+                            基於現行對比度計算方法（Michelson）及耀斑計算方法（灰階像素），比較兩者經正規化之數據曲線的形狀差異，包括以下三種指標：
+                            <ul class="subitem">
+                                <li>
+                                    <strong class="text-success">皮爾森相關係數（Pearson）</strong>：
+                                    <span>主要關注曲線的數值趨勢一致性（線性），不受整體平移或比例縮放影響。</span>
+                                    <span class="text-danger">若 Pearson 數值很高，代表兩者在「數值變化趨勢」上非常一致。</span>
+                                    <span>數值範圍為 -1 至 +1，<span class="text-danger">+1 表示形狀完全一致，-1 表示形狀完全相反。</span>
+                                </li>
+                                <li>
+                                    <strong class="text-success">正規化均方根誤差（NRMSE）</strong>：
+                                    <span>評估「數值誤差大小（實際差距）」，</span>
+                                    <span class="text-danger">反映新方法與原方法計算結果的實際偏差。數值越小表示兩者越接近。</span>
+                                    <span>數值範圍為 0 至正無限大。</span>
+                                </li>
+                                <li>
+                                    <strong class="text-success">斯皮爾曼等級相關（Spearman）</strong>：
+                                    <span>評估「排序一致性（是否符合模糊程度遞增）」</span>
+                                    <span class="text-danger">若 Spearman 數值高：表示該方法越能正確反映模糊程度排序。</span>
+                                    <span>數值範圍為 -1 至 +1 。</span>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong class="text-primary fw-bolder">運算耗時</strong><br>
+                            指該方法對不同模糊程度圖像進行量化計算所需的時間。
+                        </li>
+                        <li>
+                            <strong class="text-primary">抗噪能力</strong><br>
+                            本研究選用<span
+                                class="text-danger">高斯噪聲、椒鹽噪聲與乘法噪聲作為影像干擾模型，分別對應加性雜訊、脈衝雜訊與乘性雜訊三種典型影像退化形式。</span>此三類噪聲涵蓋了感測器電子雜訊、突發性像素異常以及與光強度相關之光學干擾，能有效模擬實際投影與影像擷取過程中常見之主要誤差來源。
+                            進一步地，針對不同噪聲條件，本研究以61張具不同模糊程度之投影影像為測試樣本，分別計算各量化方法在受干擾情境下之均方誤差（MSE）、平均絕對誤差（MAE）以及正規化平均絕對誤差（NMAE），以多面向評估噪聲對量化結果之影響程度。其中，<span
+                                class="text-danger">MSE用以強調較大誤差之影響，MAE反映整體偏差情形，而NMAE則進一步提供具尺度一致性之相對誤差衡量。</span>
+                            最後，為整合不同評估指標之資訊，本研究將上述三項誤差指標進行正規化與加權整合，建立一綜合評分機制，作為各量化方法之抗躁能力指標（Robustness to Noise Index,
+                            RNI）。該指標可全面反映方法於不同噪聲型態與模糊條件下之穩定性與抗干擾能力，進而作為各方法效能比較之依據。
+                            <ul class="subitem">
+                                <li>
+                                    <strong class="text-success">均方誤差（Mean Squared Error, MSE）</strong>
+                                    <span>：衡量影像像素數值相對於原始影像之平方偏差程度，對較大誤差具有放大效果。</span>
+                                    <span class="text-danger"> MSE 值越小，噪聲影響越小，影像越接近原始；反之，噪聲破壞越明顯。</span>
+                                </li>
+                                <li>
+                                    <strong class="text-success">平均絕對誤差（Mean Absolute Error, MAE）</strong>
+                                    <span>：衡量影像與原始影像之間的平均絕對偏差，能反映整體誤差水準且不受正負抵銷影響。</span>
+                                    <span class="text-danger"> MAE 值越小，整體偏差越小，影像越穩定。</span>
+                                    <span>該誤差計算方法對極端偏差不會像 MSE 那麼敏感，適合評估對比度方法在中小幅度干擾下的穩健性</span>
+                                </li>
+                                <li>
+                                    <strong class="text-success">正規化平均絕對誤差（Normalized Mean Absolute Error,
+                                        NMAE）</strong>
+                                    <span>：將 MAE 進行正規化處理，使誤差具備尺度一致性與可比較性，適用於不同影像或不同數值範圍之間的比較。</span>
+                                    <span class="text-danger">MSE 值越小，相對誤差越低，抗噪能力越佳。</span>
+                                </li>
+                                <li>
+                                    <strong class="text-success">本研究抗噪綜合指標（Robustness to Noise Index, RNI）</strong>
+                                    <span>：在多組不同干擾強度條件下，比較其受干擾與未受干擾之結果差異，透過上述三項誤差指標之正規化與加權整合。</span>
+                                    <span class="text-danger">數值越小，相對誤差越低，抗噪能力越佳。</span>
+                                </li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <p class="fs-6 fw-bold text-primary mb-3">
+                        <!--請您依據自身職務需求，對這些評估指標的重要性進行拖曳排序。您的排序將幫助我們了解不同職務對各指標的重視程度，並作為方法評選的基礎：-->
+                    </p>
+                    <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                        <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">[一] 初始重要性排序</span>
+                        <span style="color:red; font-size:0.9em;">請依您的判斷由左至右排序重要性（由高至低），並調整各選項間為「大於」或「等於」。</span>
+                    </div>
+                    <div id="container-M" class="drag-area d-flex align-items-center flex-wrap gap-2 mb-3"></div>
+                    <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                        <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">[二] 相對重要性確認</span>
+                        <span style="color:red; font-size:0.9em;">請針對各指標進行兩兩比較，依您的判斷評估其相對重要性程度。</span>
+                    </div>
+                    <!--<button type="button" class="btn btn-sm btn-info float-end" id="demoBtn1">示範操作</button>-->
+                    <div class="drag-area" id="keyItems">
+                        <!--
+                            <ul class="list-group mb-3" id="fieldSortList">
+                            <li class="list-group-item sortable-item" data-field="方法適切性"><span
+                                    class="rank-badge"></span>方法適切性
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="運算耗時"><span
+                                    class="rank-badge"></span>運算耗時
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="方法細緻度"><span
+                                    class="rank-badge"></span>方法細緻度（正規化變異數）
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="形狀一致度"><span
+                                    class="rank-badge"></span>形狀一致度</li>
+                        </ul>
+                        -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 對比度量測 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="card-header fs-4 fw-bolder">四、專家意見調查[2/4]</div>
+                <div class="card-body">
+                    <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                        <span class="ps-2 fs-5 fw-bolder"
+                            style="border-left: 5px solid #808080;">對比度（Contrast）量測方法評估之專家相對優選比較</span>
+                    </div>
+                    <p class="fs-6 fw-bold mb-3">
+                        <span>本研究透過案場實地參訪與產業專家訪談，結合實際應用場景需求與相關文獻資料進行蒐集與分析，彙整出共</span>
+                        <span class="text-primary"> 15 種適用於對比度量測之量化方法。</span>
+                        <span>基於現行對比度量測影像，本研究進一步透過高斯模糊技術生成 61
+                            張不同模糊程度之影像資料集，並以對比度量測為目標，導入各種方法進行數值量化分析，計算其與現行人工量測方法</span>
+                        <span class="text-primary">（米歇爾森對比度）</span>
+                        <span>之差異、平均運算時間及抗噪能力等指標。再進一步結合必要單調性與運算效率等條件進行篩選與比較，</span>
+                        <span class="text-primary">最終優選出 5 種表現較佳之方法。</span>
+                        <span>其對應之場景應用與評估指標整理如下表所示：</span>
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <colgroup>
+                                <col style="width: 5%;"> <!-- 序號 -->
+                                <col style="width: 9%;"> <!-- 方法名稱 -->
+                                <col style="width: 15%;"> <!-- 計算原理 -->
+                                <col style="width: 15%;"> <!-- 是用場景 -->
+                                <col style="width: 11%;"> <!-- Pearson -->
+                                <col style="width: 11%;"> <!-- NRMSE -->
+                                <col style="width: 11%;"> <!-- Spearman -->
+                                <col style="width: 11%;"> <!-- 運算耗時 -->
+                                <col style="width: 11%;"> <!-- 抗噪能力 -->
+                            </colgroup>
+                            <thead class="table-secondary text-center align-middle" style="height:90px;">
+                                <tr>
+                                    <th rowspan="2" class="align-middle">序號</th>
+                                    <th rowspan="2" class="align-middle">方法名稱</th>
+                                    <th colspan="2" class="align-middle">方法適切性</th>
+                                    <th colspan="3" class="align-middle">現行人工量化差異</th>
+                                    <th rowspan="2" class="align-middle">運算耗時</th>
+                                    <th rowspan="2" class="align-middle">抗躁能力(RNI)</th>
+                                </tr>
+                                <tr>
+                                    <th class="align-middle">計算原理</th>
+                                    <th class="align-middle">適用場景</th>
+                                    <th class="align-middle">皮爾森相關係數</th>
+                                    <th class="align-middle">正規化均方根誤差</th>
+                                    <th class="align-middle">斯皮爾曼等級相關</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr style="height:90px;">
+                                    <td class="text-center align-middle">現行<br>方法</td>
+                                    <td class="text-start align-middle">米歇爾森對比度</td>
+                                    <td class="text-start align-middle">量測影像最大亮度與最小亮度的差異與總和的比值</td>
+                                    <td class="text-start align-middle">適合大面積亮暗差異或投影整體對比度量測</td>
+                                    <td class="text-center align-middle">1</td>
+                                    <td class="text-center align-middle">0</td>
+                                    <td class="text-center align-middle">1</td>
+                                    <td class="text-center align-middle">0.092871789</td>
+                                    <td class="text-center align-middle">0.628689469</td>
+                                </tr>
+
+                                <tr style="height:90px;">
+                                    <td class="text-center align-middle">1</td>
+                                    <td class="text-start align-middle">高頻能量指標</td>
+                                    <td class="text-start align-middle">對影像高通濾波或統計頻域高頻能量</td>
+                                    <td class="text-start align-middle">適合細節紋理或紋理對比度分析</td>
+                                    <td class="text-center align-middle">0.895145051</td>
+                                    <td class="text-center align-middle">0.19643446</td>
+                                    <td class="text-center align-middle">0.999060132</td>
+                                    <td class="text-center align-middle">0.389202566</td>
+                                    <td class="text-center align-middle">0.089519053</td>
+                                </tr>
+
+                                <tr style="height:90px;">
+                                    <td class="text-center align-middle">2</td>
+                                    <td class="text-start align-middle">變異數指標</td>
+                                    <td class="text-start align-middle">計算影像全圖或區域亮度的方差</td>
+                                    <td class="text-start align-middle">投影整體銳利度或對比度簡單量測</td>
+                                    <td class="text-center align-middle">0.895069405</td>
+                                    <td class="text-center align-middle">0.196451196</td>
+                                    <td class="text-center align-middle">0.999060132</td>
+                                    <td class="text-center align-middle">0.090163779</td>
+                                    <td class="text-center align-middle">0.089378565</td>
+                                </tr>
+
+                                <tr style="height:90px;">
+                                    <td class="text-center align-middle">3</td>
+                                    <td class="text-start align-middle">邊緣能量指標</td>
+                                    <td class="text-start align-middle">使用 Prewitt 一階梯度算子計算水平方向與垂直方向邊緣能量平方和</td>
+                                    <td class="text-start align-middle">基本邊緣檢測，可用於文字或圖形邊緣分析</td>
+                                    <td class="text-center align-middle">0.895009978</td>
+                                    <td class="text-center align-middle">0.196767749</td>
+                                    <td class="text-center align-middle">0.999060132</td>
+                                    <td class="text-center align-middle">0.249591746</td>
+                                    <td class="text-center align-middle">0.083050393</td>
+                                </tr>
+
+                                <tr style="height:90px;">
+                                    <td class="text-center align-middle">4</td>
+                                    <td class="text-start align-middle">差分銳利度指標</td>
+                                    <td class="text-start align-middle">計算相鄰像素亮度差平方和</td>
+                                    <td class="text-start align-middle">簡化邊緣模糊檢測</td>
+                                    <td class="text-center align-middle">0.895009984</td>
+                                    <td class="text-center align-middle">0.196767748</td>
+                                    <td class="text-center align-middle">0.999060132</td>
+                                    <td class="text-center align-middle">0.374324344</td>
+                                    <td class="text-center align-middle">0.090788655</td>
+                                </tr>
+
+                                <tr style="height:90px;">
+                                    <td class="text-center align-middle">5</td>
+                                    <td class="text-start align-middle">梯度銳利度指標</td>
+                                    <td class="text-start align-middle">計算 Sobel 梯度平方和，用來反映邊緣能量</td>
+                                    <td class="text-start align-middle">適合文字或細節邊緣檢測，對噪聲耐受性較好</td>
+                                    <td class="text-center align-middle">0.895009985</td>
+                                    <td class="text-center align-middle">0.196767741</td>
+                                    <td class="text-center align-middle">0.999060132</td>
+                                    <td class="text-center align-middle">0.570802941</td>
+                                    <td class="text-center align-middle">0.08505653</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fs-6 fw-bold text-primary mb-1">
+                        <!--請您根據自身的職務需求與專業判斷，對下列方法進行拖曳排序，將最符合您需求、最適合的方法置於最前。-->
+                    </p>
+                    <!--<button type="button" class="btn btn-sm btn-info float-end" id="demoBtn1">示範操作</button>-->
+                    <div>
+                        <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                            <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">[一] 初始重要性排序</span>
+                            <span style="color:red; font-size:0.9em;">請依您的判斷由左至右排序重要性（由高至低），並調整各選項間為「大於」或「等於」。</span>
+                        </div>
+                        <div id="container-C" class="drag-area d-flex align-items-center flex-wrap gap-2 mb-3"></div>
+                        <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                            <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">[二] 相對重要性確認</span>
+                            <span style="color:red; font-size:0.9em;">請針對各指標進行兩兩比較，依您的判斷評估其相對重要性程度。</span>
+                        </div>
+                        <div class="drag-area" id="contrastItems">
+                            <!--
+                            <ul class="list-group mb-3" id="contrastSortList">
+                            <li class="list-group-item sortable-item" data-field="Tenengrad 梯度能量"><span
+                                    class="rank-badge"></span>Tenengrad 梯度能量
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="Prewitt 梯度能量"><span
+                                    class="rank-badge"></span>Prewitt 梯度能量
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="影像方差"><span
+                                    class="rank-badge"></span>影像方差
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="Laplacian 方差"><span
+                                    class="rank-badge"></span>Laplacian 方差
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="高頻能量"><span
+                                    class="rank-badge"></span>高頻能量
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="Brenner 梯度"><span
+                                    class="rank-badge"></span>Brenner 梯度
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="Michelson 對比度"><span
+                                    class="rank-badge"></span>Michelson 對比度
+                            </li>
+                        </ul>
+                        -->
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- 耀斑量測 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="card-header fs-4 fw-bolder">五、專家意見調查[3/4]</div>
+                <div class="card-body">
+                    <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                        <span class="ps-2 fs-5 fw-bolder"
+                            style="border-left: 5px solid #808080;">耀斑(Flare)量測方法評估之專家相對優選比較</span>
+                    </div>
+                    <p class="fs-6 fw-bold mb-3">
+                        <span>本研究透過案場實地參訪與產業專家訪談，結合實際應用場景需求與相關文獻資料進行蒐集與分析，彙整出共</span>
+                        <span class="text-primary"> 4 種適用於耀斑量測之量化方法。</span>
+                        <span>基於現行耀斑量測影像，本研究進一步透過高斯模糊技術生成 61 張不同模糊程度之影像資料集，並以耀斑量測為目標，導入各種方法進行數值量化分析，計算其與現行人工量測方法</span>
+                        <span class="text-primary">（灰階像素）</span>
+                        <span>之差異及平均運算時間等指標。</span>
+                        <span>其對應之場景應用與評估指標整理如下表所示：</span>
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <colgroup>
+                                <col style="width: 6%;"> <!-- 序號 -->
+                                <col style="width: 10%;"> <!-- 方法名稱 -->
+                                <col style="width: 20%;"> <!-- 計算原理 -->
+                                <col style="width: 20%;"> <!-- 是用場景 -->
+                                <col style="width: 11%;"> <!-- Pearson -->
+                                <col style="width: 11%;"> <!-- NRMSE -->
+                                <col style="width: 11%;"> <!-- Spearman -->
+                                <col style="width: 11%;"> <!-- 運算耗時 -->
+                            </colgroup>
+                            <thead class="table-secondary text-center align-middle">
+                                <tr style="height:90px;">
+                                    <th rowspan="2" class="align-middle">序號</th>
+                                    <th rowspan="2" class="align-middle">方法名稱</th>
+                                    <th colspan="2" class="align-middle">方法適切性</th>
+                                    <th colspan="3" class="align-middle">現行人工量化差異</th>
+                                    <th rowspan="2" class="align-middle">運算耗時</th>
+                                </tr>
+                                <tr style="height:90px;">
+                                    <th class="align-middle">計算原理</th>
+                                    <th class="align-middle">適用場景</th>
+                                    <th class="align-middle">皮爾森相關係數</th>
+                                    <th class="align-middle">正規化均方根誤差</th>
+                                    <th class="align-middle">斯皮爾曼等級相關</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <tr style="height:90px;">
+                                    <td class="text-center align-middle">現行<br>方法</td>
+                                    <td class="text-start align-middle">灰階像素</td>
+                                    <td class="text-start align-middle">
+                                        在影像中建立量測區域（ROI），依自訂閾值將區域進行二值化，然後針對反差邊界計算最大水平或垂直長度，取其中最大值作為量測結果。</td>
+                                    <td class="text-start align-middle">適合邊界明顯、對比度高的物件，如單一亮斑或明顯圖形輪廓。</td>
+                                    <td class="text-center align-middle">1</td>
+                                    <td class="text-center align-middle">0</td>
+                                    <td class="text-center align-middle">1</td>
+                                    <td class="text-center align-middle">0.160211361</td>
+                                </tr>
+
+                                <tr style="height:90px;">
+                                    <td class="text-center align-middle">1</td>
+                                    <td class="text-start align-middle">強度百分比</td>
+                                    <td class="text-start align-middle">將影像中亮度高於圖像最大亮度一定百分比的像素判定為前景，其餘為背景。</td>
+                                    <td class="text-start align-middle">適合「黑背景 + 白亮斑」的影像，例如光點、投影亮斑檢測。</td>
+                                    <td class="text-center align-middle">0.99903341</td>
+                                    <td class="text-center align-middle">0.02228665</td>
+                                    <td class="text-center align-middle">0.99926375</td>
+                                    <td class="text-center align-middle">0.161350141</td>
+                                </tr>
+
+                                <tr style="height:90px;">
+                                    <td class="text-center align-middle">2</td>
+                                    <td class="text-start align-middle">自適應二值化</td>
+                                    <td class="text-start align-middle">對影像局部區域計算閾值（如區域平均值或高斯加權平均），每個區域分別二值化。</td>
+                                    <td class="text-start align-middle">適合投影幕布光線不均、局部亮暗差異大的場景，或前景細節豐富的影像。</td>
+                                    <td class="text-center align-middle">0.99153528</td>
+                                    <td class="text-center align-middle">0.07601773</td>
+                                    <td class="text-center align-middle">0.99851903</td>
+                                    <td class="text-center align-middle">0.159916671</td>
+                                </tr>
+
+                                <tr style="height:90px;">
+                                    <td class="text-center align-middle">3</td>
+                                    <td class="text-start align-middle">大津二值化</td>
+                                    <td class="text-start align-middle">自動計算一個全局閾值，使前景與背景的類間方差最大化，進行二值化。</td>
+                                    <td class="text-start align-middle">適合背景均勻、前景亮度明顯高於背景的情況。</td>
+                                    <td class="text-center align-middle">0.99330188</td>
+                                    <td class="text-center align-middle">0.08827719</td>
+                                    <td class="text-center align-middle">0.99742843</td>
+                                    <td class="text-center align-middle">0.158890292</td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="fs-6 fw-bold text-primary mb-1">
+                        <!--請您根據自身的職務需求與專業判斷，對下列方法進行拖曳排序，將最符合您需求、最適合的方法置於最前。-->
+                    </p>
+                    <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                        <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">[一] 初始重要性排序</span>
+                        <span style="color:red; font-size:0.9em;">請依您的判斷由左至右排序重要性（由高至低），並調整各選項間為「大於」或「等於」。</span>
+                    </div>
+                    <div id="container-F" class="drag-area d-flex align-items-center flex-wrap gap-2 mb-3"></div>
+                    <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                        <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">[二] 相對重要性確認</span>
+                        <span style="color:red; font-size:0.9em;">請針對各指標進行兩兩比較，依您的判斷評估其相對重要性程度。</span>
+                    </div>
+                    <!--<button type="button" class="btn btn-sm btn-info float-end" id="demoBtn1">示範操作</button>-->
+                    <div class="drag-area" id="flareItems">
+                        <!--
+                            <ul class="list-group mb-3" id="flareSortList">
+                            <li class="list-group-item sortable-item" data-field="灰階像素"><span
+                                    class="rank-badge"></span>灰階像素
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="強度百分比"><span
+                                    class="rank-badge"></span>強度百分比
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="大津二值化"><span
+                                    class="rank-badge"></span>大津二值化
+                            </li>
+                            <li class="list-group-item sortable-item" data-field="自適應二值化"><span
+                                    class="rank-badge"></span>自適應二值化
+                            </li>
+                        </ul>
+                        -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 結尾 -->
+        <div class="card mb-4">
+            <div class="card-header fs-4 fw-bolder">六、專家意見調查[4/4]</div>
+            <div class="card-body">
+                <div class="mb-3 mt-1" style="display:flex; align-items:flex-end; gap:10px;">
+                    <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">指標項目影響程度</span>
+                    <!--<span style="color:gray; font-size:0.9em;">僅作為資料彙整與比對使用，所有資料將依相關規範妥善管理。</span>-->
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-12"><label class="fw-bolder">指標項目提供參考對您的判斷有多大程度的影響</label>
+                        <select class="form-select" id="itemLevel">
+                            <option value="">請選擇...</option>
+                            <option>完全依照工具結果</option>
+                            <option>大部分參考工具</option>
+                            <option>工具與個人經驗各半</option>
+                            <option>大部分參考個人經驗</option>
+                            <option>完全依照個人經驗</option>
+                        </select>
+                        <div class="invalid-feedback text-end" id="itemLevelFeedback"></div>
+                    </div>
+                </div>
+                <div class="mb-3 mt-5" style="display:flex; align-items:flex-end; gap:10px;">
+                    <span class="ps-2 fs-5 fw-bolder" style="border-left: 5px solid #808080;">專家建議意見</span>
+                    <!--<span style="color:gray; font-size:0.9em;">用於分析不同組織單位與職務類型之差異，請依目前實際狀況填寫。</span>-->
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-12"><label class="fw-bolder">建議補充</label><textarea class="form-control"
+                            id="comment" rows="3"></textarea>
+                        <div class="invalid-feedback text-end" id="commentFeedback"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 送出按鈕 -->
+        <div class="d-flex justify-content-center mt-4">
+            <button id="submitBtn" class="btn btn-primary btn-lg w-100" style="max-width:1200px;">送出問卷</button>
+        </div>
+        <!--
+        <button type="button" id="saveDraftBtn">
+            <i class="bi bi-floppy-fill fs-3"></i>
+            <span class="fab-label">儲存目前進度</span>
+        </button>
+        -->
+        <!-- Toast HTML -->
+        <div class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 11">
+            <div id="saveToast" class="toast align-items-center bg-success border-0 p-1 text-light" role="alert"
+                aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        問卷數據已成功暫存！
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                        aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+</body>
+<script>
+    // ===== JSON 資料 =====
+    const questionsData = [
+        {
+            index: 1, items: [
+                { name: "方法適切性", subtitle: "", code: "M1" },
+                { name: "現行人工量化差異", subtitle: "", code: "M2" },
+                { name: "運算耗時", subtitle: "", code: "M3" },
+                { name: "抗噪能力", subtitle: "", code: "M4" }
+            ], containerId: "keyItems"
+        },
+        {
+            index: 2, items: [
+                { name: "高頻能量指標", subtitle: "High Frequency Energy", code: "C1" },
+                { name: "變異數指標", subtitle: "Variance", code: "C2" },
+                { name: "邊緣能量指標", subtitle: "Prewitt Energy", code: "C3" },
+                { name: "差分銳利度指標", subtitle: "Brenner", code: "C4" },
+                { name: "梯度銳利度指標", subtitle: "Tenengrad", code: "C5" }
+            ], containerId: "contrastItems"
+        },
+        {
+            index: 3, items: [
+                { name: "強度百分比法", subtitle: "亮度百分比", code: "F1" },
+                { name: "自適應二值化", subtitle: "平均化門檻值", code: "F2" },
+                { name: "大津二值化", subtitle: "門檻值自動化", code: "F3" },
+
+            ], containerId: "flareItems"
+        }
+    ];
+
+    const codeNameMap = {};
+
+    questionsData.forEach(q => {
+        q.items.forEach(item => {
+            codeNameMap[item.code] = item.name;
+        });
+    });
+
+    // ===== 產生題目 =====
+    function generateAHPQuestionsFromData(qData) {
+        const container = $("#" + qData.containerId);
+        container.empty();
+        const items = qData.items;
+        const version = qData.index;
+        let qc = items.length * (items.length - 1) / 2;
+        let questions = [];
+        for (let i = 0; i < items.length; i++) {
+            for (let j = i + 1; j < items.length; j++) {
+                questions.push({ a: items[i], b: items[j] });
+            }
+        }
+        questions = shuffleArray(questions);
+
+        questions.forEach((q, index) => {
+            let leftFirst = Math.random() > 0.5;
+            let leftItem = leftFirst ? q.a : q.b;
+            let rightItem = leftFirst ? q.b : q.a;
+            let questionId = `q_${version}_${index}`;
+
+            let html = `
+        <div class="card mb-3 shadow-sm" id="${questionId}_card">
+            <div class="card-body">
+                <p><strong>題目[${index + 1}/${qc}]</strong></p>
+                <div class="compare-row">
+                    <div class="compare-item left-label">
+                        ${leftItem.name}<span class="subtitle badge bg-light text-secondary">${leftItem.subtitle || ''}</span>
+                    </div>
+                    <div class="scale-container flex-grow-1">
+                        ${generateScale(questionId, leftItem, rightItem)}
+                    </div>
+                    <div class="compare-item right-label">
+                        ${rightItem.name}<span class="subtitle badge bg-light text-secondary">${rightItem.subtitle || ''}</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+            container.append(html);
+        });
+
+        container.append(`
+        <div class="text-center mt-2">
+            <button class="btn btn-success calculate-cr-btn fw-bold" data-version="${version}" data-container="${qData.containerId}">進行一致性驗證（確認問卷回覆合理性）</button>
+        </div>
+        <div id="result_${qData.containerId}"></div>
+    `);
+    }
+
+    // ===== 產生 scale 選項 =====
+    function generateScale(questionId, leftItem, rightItem) {
+        const scale = [
+            { value: 9, label: "左極重要", color: "primary" },
+            { value: 7, label: "左明顯重要", color: "primary" },
+            { value: 5, label: "左稍微重要", color: "primary" },
+            { value: 3, label: "左弱重要", color: "primary" },
+            { value: 1, label: "同等重要", color: "secondary" },
+            { value: 1 / 3, label: "右弱重要", color: "danger" },
+            { value: 1 / 5, label: "右稍微重要", color: "danger" },
+            { value: 1 / 7, label: "右明顯重要", color: "danger" },
+            { value: 1 / 9, label: "右極重要", color: "danger" }
+        ];
+        let html = ``;
+        scale.forEach((option, i) => {
+            const inputId = `${questionId}_${i}`;
+            html += `
+            <input type="radio" class="btn-check" name="${questionId}" id="${inputId}" 
+                   autocomplete="off" value="${option.value}"
+                   data-left="${leftItem.code}" data-right="${rightItem.code}">
+            <label class="btn btn-outline-${option.color}" for="${inputId}">${option.label}</label>
+        `;
+        });
+        return html;
+    }
+
+    // ===== 打亂陣列 =====
+    function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1));[array[i], array[j]] = [array[j], array[i]]; } return array; }
+
+    // ===== CR 計算 =====
+    function calculateCR_Eigen(matrix) {
+        const n = matrix.length;
+        const RI_table = { 1: 0, 2: 0, 3: 0.58, 4: 0.90, 5: 1.12, 6: 1.24, 7: 1.32, 8: 1.41, 9: 1.45 };
+        let w = Array(n).fill(1), tol = 1e-9, maxIter = 1000;
+        for (let iter = 0; iter < maxIter; iter++) {
+            let next = Array(n).fill(0);
+            for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) next[i] += matrix[i][j] * w[j];
+            const sum = next.reduce((a, b) => a + b, 0);
+            next = next.map(x => x / sum);
+            let diff = Math.max(...next.map((v, i) => Math.abs(v - w[i])));
+            w = next;
+            if (diff < tol) break;
+        }
+        let lambdaMax = 0;
+        for (let i = 0; i < n; i++) {
+            let rowSum = 0; for (let j = 0; j < n; j++) rowSum += matrix[i][j] * w[j];
+            lambdaMax += rowSum / w[i];
+        }
+        lambdaMax /= n;
+        const CI = (lambdaMax - n) / (n - 1);
+        const RI = RI_table[n] || 1.45;
+        const CR = CI / RI;
+        return { CR, CI, lambdaMax, weights: w };
+    }
+
+    // ===== 分析一致性 =====
+    function analyzeConsistency(items, selector, threshold = 0.1) {
+        const n = items.length;
+        let matrix = Array.from({ length: n }, () => Array(n).fill(1));
+        let questionMap = {};
+        $(selector).each(function () {
+            const value = parseFloat($(this).val());
+            const left = $(this).data("left");
+            const right = $(this).data("right");
+            const i = items.findIndex(x => x.code == left);
+            const j = items.findIndex(x => x.code == right);
+            matrix[i][j] = value;
+            matrix[j][i] = 1 / value;
+            questionMap[$(this).attr("name")] = [i, j];
+        });
+        const result = calculateCR_Eigen(matrix);
+        let questionErrors = {};
+        for (const qId in questionMap) {
+            const [i, j] = questionMap[qId];
+            const expected = result.weights[i] / result.weights[j];
+            const selectedValue = matrix[i][j];
+            questionErrors[qId] = Math.abs(Math.log(selectedValue / expected));
+        }
+        let sorted = Object.entries(questionErrors).sort((a, b) => b[1] - a[1]);
+        let topCount = Math.ceil(sorted.length * 0.2);
+        let inconsistentQuestions = result.CR > threshold ? sorted.slice(0, topCount).map(x => x[0]) : [];
+        return { ...result, inconsistentQuestions };
+    }
+
+    // ===== 初始化 =====
+    $(document).ready(function () {
+        questionsData.forEach(qData => generateAHPQuestionsFromData(qData));
+    });
+
+    // ===== 單組 CR 計算按鈕 =====
+    $(document).on("click", ".calculate-cr-btn", function () {
+        const containerId = $(this).data("container");
+        const version = $(this).data("version");
+        const qData = questionsData.find(q => q.index == version);
+        const selector = `#${containerId} input[type=radio]:checked`;
+        const totalQuestions = qData.items.length * (qData.items.length - 1) / 2;
+        if ($(selector).length !== totalQuestions) {
+            alert(`此組問卷未完成所有比較！`);
+            return;
+        }
+        $(`#${containerId} div[id$='_card']`).removeClass("inconsistent");
+        const result = analyzeConsistency(qData.items, selector);
+        result.inconsistentQuestions.forEach(qId => $(`#${qId}_card`).addClass("inconsistent"));
+        let html = `<div class="alert ${result.CR < 0.1 ? 'alert-success' : 'alert-danger'} mt-2">
+        <h5>此題組一致性驗證分析如下: </h5>
+        <p>一致性比率(CR) = ${result.CR.toFixed(4)}</p>
+        <p>一致性指標(CI) = ${result.CI.toFixed(4)}</p>
+        <p>最大特徵值(λmax) = ${result.lambdaMax.toFixed(4)}</p>
+        <p>驗證結果：${result.inconsistentQuestions.length > 0 ? '不符合, 請檢查紅框題目' : '符合, 請接續後面問卷或送出問卷'}</p>
+    </div>`;
+        $(`#result_${containerId}`).html(html);
+    });
+
+    /*
+    // ===== 全部送出按鈕 =====
+    $("#submitAllBtn").click(function(){
+        let allPass = true;
+        let finalResult = {};
+        for(const qData of questionsData){
+            const containerId = qData.containerId;
+            const selector = `#${containerId} input[type=radio]:checked`;
+            const totalQuestions = qData.items.length*(qData.items.length-1)/2;
+            if($(selector).length!==totalQuestions){
+                alert(`組 ${containerId} 未完成所有比較！`);
+                allPass=false;
+                return;
+            }
+            const result = analyzeConsistency(qData.items, selector);
+            $(`#${containerId} div[id$='_card']`).removeClass("inconsistent");
+            result.inconsistentQuestions.forEach(qId=> $(`#${qId}_card`).addClass("inconsistent"));
+            if(result.CR>0.1) allPass=false;
+            // 收集結果
+            $(selector).each(function(){
+                const key = $(this).data("left")+":"+$(this).data("right");
+                finalResult[key]=parseFloat($(this).val());
+            });
+        }
+        if(!allPass){
+            alert("有組問卷一致性未通過 (CR>0.1)，請檢查紅框題目！");
+            return;
+        }
+        console.log("最終問卷結果 JSON：", JSON.stringify(finalResult,null,2));
+        alert("問卷已送出，結果請查看 console");
+    });
+    */
+
+</script>
+<script>
+    $(document).ready(function () {
+        // 單列排序
+        // 1. 定義不同的數據
+        const dataM = ["方法適切性", "現行人工量化差異", "運算耗時", "抗噪能力"];
+        const dataC = ["高頻能量指標", "變異數指標", "邊緣能量指標", "差分銳利度指標", "梯度銳利度指標"];
+        const dataF = ["強度百分比法", "自適應二值化", "大津二值化"];
+
+        // 2. 初始化兩套系統
+        initSortSystem('#container-M', dataM);
+        initSortSystem('#container-C', dataC);
+        initSortSystem('#container-F', dataF);
+
+        // 核心初始化函式
+        function initSortSystem(containerId, items) {
+            const $container = $(containerId);
+
+            // 生成內容
+            items.forEach((item, index) => {
+                $container.append(createItemNode(item));
+                if (index < items.length - 1) $container.append(createRelationNode());
+            });
+
+            // 綁定該容器內的拖拽事件
+            bindDragEvents($container);
+        }
+
+        function createItemNode(text) {
+            return `<div class="sort-item p-3 border rounded bg-white draggable" draggable="true" style="cursor: move; min-width: 80px; user-select: none;">
+                    <b class="item-text">${text}</b>
+                </div>`;
+        }
+
+        function createRelationNode() {
+            return `<div class="relation-node">
+                    <select class="form-select form-select-sm fw-bold border-secondary" style="width: 60px;">
+                        <option value=">">></option>
+                        <option value="=">=</option>
+                    </select>
+                </div>`;
+        }
+
+        function refreshRelations($container) {
+            $container.find('.relation-node').remove();
+            $container.find('.sort-item').each(function (i, el) {
+                if (i < $container.find('.sort-item').length - 1) {
+                    $(el).after(createRelationNode());
+                }
+            });
+        }
+
+        function bindDragEvents($container) {
+            let draggedElement = null;
+
+            $container.on('dragstart', '.draggable', function () {
+                draggedElement = this;
+                $(this).addClass('opacity-50');
+            });
+
+            $container.on('dragover', function (e) { e.preventDefault(); });
+
+            $container.on('drop', '.draggable', function (e) {
+                e.preventDefault();
+                if (draggedElement !== this) {
+                    const rect = this.getBoundingClientRect();
+                    const isAfter = (e.originalEvent.clientX - rect.left) > (rect.width / 2);
+                    if (isAfter) $(this).after(draggedElement);
+                    else $(this).before(draggedElement);
+                    refreshRelations($container);
+                }
+            });
+
+            $container.on('dragend', '.draggable', function () {
+                $(this).removeClass('opacity-50');
+                draggedElement = null;
+            });
+        }
+
+        function getResultStr(targetId) {
+
+            let resultStr = "";
+
+            $(targetId).children().each(function () {
+
+                if ($(this).hasClass('sort-item')) {
+                    resultStr += $(this).find('.item-text').text();
+                }
+                else if ($(this).hasClass('relation-node')) {
+                    resultStr += " " + $(this).find('select').val() + " ";
+                }
+
+            });
+
+            return resultStr.trim();
+        }
+
+        // 3. 統一處理按鈕點擊
+        $('.submit-btn').on('click', function () {
+            const targetId = $(this).data('target');
+            let resultStr = "";
+
+            $(targetId).children().each(function () {
+                if ($(this).hasClass('sort-item')) {
+                    resultStr += $(this).find('.item-text').text();
+                } else if ($(this).hasClass('relation-node')) {
+                    resultStr += " " + $(this).find('select').val() + " ";
+                }
+            });
+
+            console.log(`[${targetId}] 輸出字串: ${resultStr}`);
+            alert(`輸出結果：\n${resultStr}`);
+        });
+        // AHP排序
+        function updateRanks($list) {
+            $list.children("li").each(function (i) { $(this).find(".rank-badge").text(i + 1); });
+        }
+        function collectDraftData() {
+            let data = {};
+            // 所有 input / select / textarea
+            $("input, select, textarea").each(function () {
+                let id = $(this).attr("id");
+                if (!id) return;
+
+                if ($(this).is(":checkbox,:radio")) {
+                    data[id] = $(this).prop("checked");
+                } else {
+                    data[id] = $(this).val();
+                }
+            });
+            return data;
+        }
+        function saveDraft() {
+            const data = collectDraftData();
+            localStorage.setItem("surveyDraft", JSON.stringify(data));
+
+            // 使用者回饋
+            //$("#saveDraftBtn").text("✔");
+            //setTimeout(() => $("#saveDraftBtn").text("💾"), 1000);
+            // 取得 Toast 元素
+            var toastEl = document.getElementById('saveToast');
+            // 建立 Bootstrap Toast 物件
+            var toast = new bootstrap.Toast(toastEl, {
+                delay: 3000  // 3 秒後自動消失
+            });
+            toast.show(); // 顯示 Toast
+        }
+        /*
+        function loadDraft() {
+            const raw = localStorage.getItem("surveyDraft");
+            if (!raw) return;
+
+            const data = JSON.parse(raw);
+
+            // 還原 input / select / textarea
+            $("input, select, textarea").each(function () {
+                let id = $(this).attr("id");
+                if (!id || data[id] === undefined) return;
+
+                if ($(this).is(":checkbox,:radio")) {
+                    $(this).prop("checked", data[id]);
+                } else {
+                    $(this).val(data[id]);
+                }
+            });
+
+            // 還原field排序
+            if (data.sortQuetions.fieldSort) {
+                let map = {};
+                $("#fieldSortList li").each(function () {
+                    map[$(this).data("field")] = $(this);
+                });
+                $("#fieldSortList").empty();
+                data.sortQuetions.fieldSort.forEach(k => map[k] && $("#fieldSortList").append(map[k]));
+                updateRanks($("#fieldSortList"));
+            }
+
+            // 還原contrast排序
+            if (data.sortQuetions.contrastSort) {
+                let map = {};
+                $("#contrastSortList li").each(function () {
+                    map[$(this).data("field")] = $(this);
+                });
+                $("#contrastSortList").empty();
+                data.sortQuetions.contrastSort.forEach(k => map[k] && $("#contrastSortList").append(map[k]));
+                updateRanks($("#contrastSortList"));
+            }
+
+            // 還原flare排序
+            if (data.sortQuetions.flareSort) {
+                let map = {};
+                $("#flareSortList li").each(function () {
+                    map[$(this).data("field")] = $(this);
+                });
+                $("#flareSortList").empty();
+                data.sortQuetions.flareSort.forEach(k => map[k] && $("#flareSortList").append(map[k]));
+                updateRanks($("#flareSortList"));
+            }
+
+        }
+        */
+        function loadDraft() {
+            const raw = localStorage.getItem("surveyDraft");
+            if (!raw) return;
+
+            const data = JSON.parse(raw);
+
+            // 1. 還原標準 input / select / textarea
+            $("input, select, textarea").each(function () {
+                let id = $(this).attr("id");
+                if (!id || data[id] === undefined) return;
+
+                if ($(this).is(":checkbox,:radio")) {
+                    $(this).prop("checked", data[id]);
+                } else {
+                    $(this).val(data[id]);
+                }
+            });
+
+            // 2. 定義還原排序的通用函數
+            function restoreSortable(listId, savedSortArray) {
+                const $list = $("#" + listId);
+                // 如果 localStorage 沒有這題的排序資料，或者資料長度為 0，就跳過不處理
+                if (!savedSortArray || savedSortArray.length === 0) return;
+
+                // 先把目前畫面上有的 li 全部存入一個暫存物件
+                let itemsMap = {};
+                $list.children("li").each(function () {
+                    let fieldName = $(this).data("field");
+                    itemsMap[fieldName] = $(this).detach(); // 使用 detach 保留事件與資料
+                });
+
+                // 依照儲存的順序，重新加入到 list 中
+                $list.empty();
+                savedSortArray.forEach(item => {
+                    // item 可能是一個物件 {field: "...", rank: ...} 或純字串，視您的 collectDraftData 而定
+                    let fieldName = typeof item === 'object' ? item.field : item;
+                    if (itemsMap[fieldName]) {
+                        $list.append(itemsMap[fieldName]);
+                        delete itemsMap[fieldName]; // 從 map 中移除，表示已還原
+                    }
+                });
+
+                // 防錯：如果有些項目在儲存的資料中沒出現（例如問卷後來改版加了新選項），補在最後面
+                $.each(itemsMap, function (key, $el) {
+                    $list.append($el);
+                });
+
+                updateRanks($list);
+            }
+
+            // 執行三個清單的還原
+            if (data.sortQuetions) {
+                restoreSortable("fieldSortList", data.sortQuetions.fieldSort);
+                restoreSortable("contrastSortList", data.sortQuetions.contrastSort);
+                restoreSortable("flareSortList", data.sortQuetions.flareSort);
+            }
+        }
+        loadDraft();
+
+        $("#fieldSortList, #contrastSortList, #flareSortList").sortable({
+            placeholder: "ui-state-highlight",
+            start: (e, ui) => ui.item.addClass("dragging"),
+            stop: (e, ui) => { ui.item.removeClass("dragging"); updateRanks($(ui.item).parent()); }
+        }).disableSelection();
+
+        updateRanks($("#fieldSortList"));
+        updateRanks($("#contrastSortList"));
+        updateRanks($("#flareSortList"));
+
+        function simulateDragOnce($list, doneCallback) {
+
+            var original = $list.children("li").map(function () {
+                return $(this).clone(true);
+            }).get();
+
+            var $first = $list.children("li").eq(0);
+            var $second = $list.children("li").eq(1);
+
+            var $hand = $("#dragHand");
+            var $hint = $("#dragHintText");
+
+            var offsetFirst = $first.offset();
+            var offsetSecond = $second.offset();
+
+            // 小手 & 提示文字
+            $hand.css({ top: offsetFirst.top, left: offsetFirst.left, display: "block" });
+            $hint.css({ top: offsetFirst.top - 30, left: offsetFirst.left, display: "block" });
+
+            // clone 拖拉物件
+            var $clone = $first.clone()
+                .css({
+                    position: "absolute",
+                    width: $first.outerWidth(),
+                    zIndex: 1000,
+                    backgroundColor: "#ffeeba"
+                })
+                .appendTo("body")
+                .offset(offsetFirst);
+
+            $second.css({ backgroundColor: "#cce5ff" });
+
+            // 拖拉動畫
+            $clone.animate(
+                { top: offsetSecond.top, left: offsetSecond.left },
+                800,
+                function () {
+
+                    // 真正交換 DOM（讓示範有「成功」感）
+                    $first.insertAfter($second);
+                    updateRanks($list);
+
+                    // 收尾動畫
+                    $clone.fadeOut(200, function () { $(this).remove(); });
+                    $hand.fadeOut(300);
+                    $hint.fadeOut(300);
+
+                    // ★ 關鍵：恢復原狀
+                    setTimeout(function () {
+                        $list.empty();
+                        original.forEach(function (li) {
+                            $list.append(li);
+                        });
+                        updateRanks($list);
+
+                        if (typeof doneCallback === "function") {
+                            doneCallback();
+                        }
+                    }, 500);
+                }
+            );
+        }
+
+        $("#demoBtn1").click(function () {
+            var $list = $("#fieldSortList");
+
+            simulateDragOnce($list, function () {
+                // 第一輪完成後，再跑第二輪
+                simulateDragOnce($list);
+            });
+        });
+
+        $("#demoBtn2").click(function () {
+            var $list = $("#methodSortList ul");
+
+            simulateDragOnce($list, function () {
+                simulateDragOnce($list);
+            });
+        });
+
+        $("#saveDraftBtn").click(function () {
+            saveDraft();
+        });
+
+        let groupName;
+
+        $('#submitBtn').click(function () {
+            let isValid = true;
+
+            // 清除之前的錯誤訊息
+            $('.invalid-feedback').text('');
+            $('input, select').removeClass('is-invalid');
+
+            // 必填欄位清單
+            const requiredFields = [
+                { id: 'ecompany', name: '任職公司' },
+                { id: 'eid', name: '員工編號' },
+                { id: 'name', name: '姓名' },
+                { id: 'gender', name: '性別' },
+                { id: 'age', name: '年齡' },
+                { id: 'education', name: '學歷' },
+                { id: 'deptName', name: '部門名稱' },
+                { id: 'deptCategory', name: '部門類別' },
+                { id: 'title', name: '職務職稱' },
+                { id: 'positionContent', name: '主要職務' },
+                { id: 'expMain', name: '年資 (本業相關)' },
+                { id: 'expPosition', name: '年資 (本職務)' },
+                { id: 'expTotal', name: '總工作年資' },
+                { id: 'ext', name: '公司分機' },
+                { id: 'email', name: '聯繫電子信箱' },
+                { id: 'phone', name: '手機號碼' },
+                { id: 'followUp', name: '是否願意接受後續訪談' },
+                { id: 'availableTime', name: '方便受訪時間' },
+                { id: 'itemLevel', name: '指標項目影響程度' },
+            ];
+
+            // 檢查必填欄位
+            requiredFields.forEach(function (field) {
+                let value = $('#' + field.id).val();
+                if (!value) {
+                    isValid = false;
+                    $('#' + field.id).addClass('is-invalid');
+                    $('#' + field.id + 'Feedback').text(field.name + ' 為必填欄位');
+                }
+            });
+
+            // Email 格式驗證
+            const emailVal = $('#email').val();
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailVal && !emailPattern.test(emailVal)) {
+                isValid = false;
+                $('#email').addClass('is-invalid');
+                $('#emailFeedback').text('請輸入有效的電子信箱格式');
+            }
+
+            // 手機號碼格式驗證 (台灣 09 開頭, 10 碼)
+            const phoneVal = $('#phone').val();
+            const phonePattern = /^09\d{8}$/;
+            if (phoneVal && !phonePattern.test(phoneVal)) {
+                isValid = false;
+                $('#phone').addClass('is-invalid');
+                $('#phoneFeedback').text('請輸入有效的手機號碼，格式為 09XXXXXXXX');
+            }
+
+            // 如果有錯誤，捲動到第一個錯誤欄位
+            if (!isValid) {
+                $('html, body').animate({
+                    scrollTop: $(".is-invalid:first").offset().top - 100
+                }, 500);
+                return;
+            } else {
+                // 全數通過
+                // 所有欄位收集成 JSON
+                /*
+                const surveyData = {
+                    eid: $('#eid').val(),
+                    name: $('#name').val(),
+                    gender: $('#gender').val(),
+                    age: $('#age').val(),
+                    education: $('#education').val(),
+                    deptName: $('#deptName').val(),
+                    deptCategory: $('#deptCategory').val(),
+                    title: $('#title').val(),
+                    positionContent: $('#positionContent').val(),
+                    expMain: $('#expMain').val(),
+                    expPosition: $('#expPosition').val(),
+                    expTotal: $('#expTotal').val(),
+                    ext: $('#ext').val(),
+                    email: $('#email').val(),
+                    phone: $('#phone').val(),
+                    followUp: $('#followUp').val(),
+                    availableTime: $('#availableTime').val()
+                };
+                */
+                saveDraft();
+                let raw = localStorage.getItem("surveyDraft");
+                if (!raw) return;
+
+                // 以上已完成基本資料填寫, 以下開始蒐集AHP資料
+                let allPass = true;
+                let finalResult = {};
+                for (const qData of questionsData) {
+                    /*
+                    const containerId = qData.containerId;
+                    const selector = `#${containerId} input[type=radio]:checked`;
+                    const totalQuestions = qData.items.length * (qData.items.length - 1) / 2;
+                    if ($(selector).length !== totalQuestions) {
+                        alert(`組 ${containerId} 未完成所有比較！`);
+                        allPass = false;
+                        return;
+                    }
+                    const result = analyzeConsistency(qData.items, selector);
+                    $(`#${containerId} div[id$='_card']`).removeClass("inconsistent");
+                    result.inconsistentQuestions.forEach(qId => $(`#${qId}_card`).addClass("inconsistent"));
+                    if (result.CR > 0.1) allPass = false;
+                    // 收集結果
+                    $(selector).each(function () {
+                        const key = $(this).data("left") + ":" + $(this).data("right");
+                        finalResult[key] = parseFloat($(this).val());
+                    });
+                    */
+
+                    const containerId = qData.containerId;
+                    const selector = `#${containerId} input[type=radio]:checked`;
+                    const totalQuestions = qData.items.length * (qData.items.length - 1) / 2;
+
+                    // 檢查是否填完
+                    if ($(selector).length !== totalQuestions) {
+                        alert(`組 ${containerId} 未完成所有比較！`);
+                        allPass = false;
+                        return;
+                    }
+
+                    // 一致性檢查
+                    const result = analyzeConsistency(qData.items, selector);
+
+                    $(`#${containerId} div[id$='_card']`).removeClass("inconsistent");
+                    result.inconsistentQuestions.forEach(qId =>
+                        $(`#${qId}_card`).addClass("inconsistent")
+                    );
+
+                    if (result.CR > 0.1) {
+                        allPass = false;
+                    }
+
+                    if (qData.index === 1) groupName = "指標權重";
+                    if (qData.index === 2) groupName = "對比度方法";
+                    if (qData.index === 3) groupName = "耀斑方法";
+
+                    // 🔥 關鍵：初始化
+                    finalResult[groupName] = {};
+
+                    // 🔥 核心：收集 AHP JSON（修正版）
+                    $(selector).each(function () {
+                        /*
+                        let left = $(this).data("left");
+                        let right = $(this).data("right");
+                        let value = parseFloat($(this).val());
+
+                        let key, finalValue;
+
+                        // 🔥 保證 A:B 格式一致
+                        if (left < right) {
+                            key = `${left}:${right}`;
+                            finalValue = value;
+                        } else {
+                            key = `${right}:${left}`;
+                            finalValue = 1 / value;
+                        }
+
+                        finalResult[key] = finalValue;
+                        */
+
+                        let left = $(this).data("left");
+                        let right = $(this).data("right");
+                        let value = parseFloat($(this).val());
+
+                        // 🔥 轉成「名稱」
+                        let leftName = codeNameMap[left];
+                        let rightName = codeNameMap[right];
+
+                        let key, finalValue;
+
+                        // 保證順序一致
+                        if (leftName < rightName) {
+                            key = `${leftName}:${rightName}`;
+                            finalValue = value;
+                        } else {
+                            key = `${rightName}:${leftName}`;
+                            finalValue = 1 / value;
+                        }
+                        finalResult[groupName][key] = finalValue;
+                    });
+                }
+                if (!allPass) {
+                    alert("有組問卷一致性未通過 (CR>0.1)，請檢查紅框題目！");
+                    return;
+                }
+                let sendData = JSON.parse(raw);
+                sendData.AHP = finalResult;
+                //console.log(JSON.stringify(sendData, null, 2));
+                //alert('問卷已成功匯出 JSON，請打開 console 查看內容');
+                //localStorage.removeItem("surveyDraft");
+
+                // 第一段排序結果
+                const resultM = getResultStr('#container-M');
+                const resultC = getResultStr('#container-C');
+                const resultF = getResultStr('#container-F');
+
+                const sortedResult = {
+                    Method: resultM,
+                    Contrast: resultC,
+                    Flare: resultF
+                };
+                sendData.FirstSorted = sortedResult;
+
+                // 因出兩種方法結果
+                console.log(JSON.stringify(sendData, null, 2));
+                alert('問卷已成功匯出 JSON，請打開 console 查看內容');
+
+
+                $.ajax({
+                    url: "https://script.google.com/macros/s/AKfycbxJ4wI_urS6xqVmYtSZ1USsx5YTAWn9WuDc71JAiqEu7cstNQbW7v3EFV0ZoH4bxRSR9g/exec",
+                    method: "POST",
+                    contentType: "text/plain; charset=utf-8",
+                    data: JSON.stringify(sendData),
+                    success: function (res) {
+                        console.log("成功", res);
+                    },
+                    error: function (err) {
+                        console.log("失敗", err);
+                    }
+                });
+            }
+
+        });
+    });
+</script>
+
+</html>
